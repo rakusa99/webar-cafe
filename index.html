@@ -1,8 +1,18 @@
 <!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><title>AR Test</title></head>
-<body>
-<h2>WebAR Test Loaded</h2>
-<p>ถ้าเห็นข้อความนี้แปลว่าเว็บโหลดได้แล้ว!</p>
-</body>
+  <head>
+    <meta charset="utf-8">
+    <title>AR Photo Spot</title>
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ar.js@3.4.0/aframe/build/aframe-ar.js"></script>
+  </head>
+  <body style="margin: 0; overflow: hidden;">
+    <a-scene embedded arjs>
+      <a-marker preset="hiro">
+        <!-- ตัวอย่างวัตถุ 3D ทดสอบ -->
+        <a-box position="0 0.5 0" rotation="0 45 0" color="red"></a-box>
+      </a-marker>
+      <a-entity camera></a-entity>
+    </a-scene>
+  </body>
 </html>
