@@ -5,34 +5,57 @@
   <title>Papifox AR Video</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
-  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-
-  <!-- AR.js (เวอร์ชันที่ยังใช้ได้) -->
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
 </head>
 
 <body style="margin: 0; overflow: hidden;">
-  <a-scene
-    embedded
-    vr-mode-ui="enabled: false"
-    arjs="sourceType: webcam; debugUIEnabled: false;"
-  >
-    <a-marker type="pattern" url="papifox.patt">
-      <a-video
+  <a-scene embedded vr-mode-ui="enabled: false" arjs="sourceType: webcam; debugUIEnabled: false;">
+
+    <a-assets>
+      <video
+        id="papivideo"
         src="papifox.mp4"
+        loop
+        muted
+        playsinline
+        webkit-playsinline>
+      </video>
+    </a-assets>
+
+    <a-marker type="pattern" url="papifox.patt" id="marker">
+      <a-video
+        src="#papivideo"
         position="0 0 0"
         rotation="-90 0 0"
         width="3"
-        height="2"
-        autoplay
-        loop
-        muted
-        playsinline>
+        height="2">
       </a-video>
     </a-marker>
 
     <a-entity camera></a-entity>
   </a-scene>
+
+  <script>
+    const marker = document.querySelector("#marker");
+    const video = document.querySelector("#papivideo");
+    </a-marker>
+
+    <a-entity camera></a-entity>
+  </a-scene>
+
+  <script>
+    const marker = document.querySelector("#marker");
+    const video = document.querySelector("#papivideo");
+
+    marker.addEventListener("markerFound", () => {
+      video.play();
+    });
+
+    marker.addEventListener("markerLost", () => {
+      video.pause();
+    });
+  </script>
+
 </body>
 </html>
