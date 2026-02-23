@@ -11,8 +11,7 @@
 
 <body style="margin: 0; overflow: hidden;">
   <a-scene embedded vr-mode-ui="enabled: false" arjs="sourceType: webcam; debugUIEnabled: false;">
-
-    <a-assets>
+<a-assets>
       <video
         id="papivideo"
         src="papifox.mp4"
@@ -32,16 +31,7 @@
         height="2">
       </a-video>
     </a-marker>
-
-    <a-entity camera></a-entity>
-  </a-scene>
-
-  <script>
-    const marker = document.querySelector("#marker");
-    const video = document.querySelector("#papivideo");
-    </a-marker>
-
-    <a-entity camera></a-entity>
+       <a-entity camera></a-entity>
   </a-scene>
 
   <script>
