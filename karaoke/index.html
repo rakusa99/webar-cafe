@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>Jukebox Karaoke</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500;600&family=Sarabun:wght@400;600&family=Monoton&display=swap">
+<style>
+:root{--bg:#140A0E;--panel:#22121A;--deep:#0C0609;--line:#5A464E;--chrome:#C9C3BC;--ink:#F5E9DA;--mute:#C9B8A6;--neon:#FFB547;--teal:#5FE0D0;--pink:#FF5C8A}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 'Sarabun',sans-serif;overflow-x:clip}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+.wrap{max-width:480px;margin:0 auto;padding:16px 14px 40px;display:flex;flex-direction:column;gap:14px}
+.h{font-family:'Mitr',sans-serif;font-weight:500}
+.muted{color:var(--mute);font-size:13px}
+/* ตู้เพลง */
+.cab{border:6px solid var(--chrome);border-radius:200px 200px 20px 20px;padding:6px;background:var(--panel);box-shadow:0 0 0 2px #6E6660}
+.neon{border:3px solid var(--neon);border-radius:192px 192px 14px 14px;box-shadow:0 0 14px var(--neon),inset 0 0 14px var(--neon);padding:30px 12px 12px;display:flex;flex-direction:column;gap:12px;align-items:center}
+.logo{font-family:'Monoton',cursive;font-size:clamp(34px,11vw,48px);line-height:1;color:var(--neon);letter-spacing:2px}
+.sub{font-family:'Mitr',sans-serif;color:var(--teal);letter-spacing:6px;font-size:14px;margin-top:4px;text-align:center}
+.screen{width:100%;aspect-ratio:16/9;background:#000;border:2px solid #6E6660;border-radius:12px;overflow:hidden;position:relative}
+.screen iframe,#yt{position:absolute;inset:0;width:100%;height:100%}
+.vinyl{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:var(--deep)}
+.disc{width:58%;aspect-ratio:1;border-radius:50%;background:repeating-radial-gradient(#050304 0 6px,#1d1418 6px 7px);display:flex;align-items:center;justify-content:center}
+.disc i{width:30%;aspect-ratio:1;border-radius:50%;background:var(--neon)}
+.spin .disc{animation:sp 3s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.spin .disc{animation:none}}
+.idle{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:16px;color:var(--mute);font-size:14px;background:var(--deep)}
+.now{width:100%;display:flex;flex-direction:column;gap:4px}
+.now .t{font-family:'Mitr',sans-serif;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar{height:6px;background:#3A2A30;border-radius:3px;cursor:pointer}
+.bar i{display:block;height:100%;width:0;background:var(--neon);border-radius:3px}
+.chip{display:inline-block;font-size:12px;border-radius:99px;padding:2px 9px;background:#123A36;color:#8FF0E3}
+.chip.warn{background:#3A2A30;color:#E6D6C6}
+/* ปุ่มควบคุม */
+.ctrl{display:flex;gap:10px;align-items:center;padding:10px;border-radius:16px;background:var(--panel);border:2px solid #6E6660}
+.round{width:48px;height:48px;flex:none;border-radius:50%;background:#3A2A30;border:2px solid var(--chrome);display:flex;align-items:center;justify-content:center}
+.round svg,.ico{width:20px;height:20px;fill:none;stroke:var(--ink);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.sing{flex:1;min-height:52px;border-radius:26px;border:none;background:var(--neon);color:#1A0E12;font-family:'Mitr',sans-serif;font-size:18px;font-weight:600;box-shadow:0 0 16px var(--neon);display:flex;align-items:center;justify-content:center;gap:8px}
+.sing.on{background:var(--pink);box-shadow:0 0 16px var(--pink)}
+.sing svg{width:20px;height:20px;fill:none;stroke:#1A0E12;stroke-width:2;stroke-linecap:round}
+/* เนื้อเพลง */
+.lyr{text-align:center;display:none;flex-direction:column;gap:6px;padding:6px 0}
+.lyr .p,.lyr .n{color:var(--mute);font-size:15px;min-height:22px}
+.lyr .c{font-family:'Mitr',sans-serif;font-size:22px;color:var(--neon);text-shadow:0 0 10px var(--neon);min-height:32px}
+.lyr .nav{display:flex;justify-content:center;gap:10px}
+/* มิกเซอร์ */
+.mix{background:var(--panel);border:2px solid #6E6660;border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.row{display:flex;align-items:center;gap:10px;min-height:40px}
+.row label{width:84px;font-size:14px;flex:none}
+.row input[type=range]{flex:1;accent-color:var(--neon);height:28px}
+.row output{width:34px;text-align:right;font-size:13px;color:var(--mute)}
+.row.off{opacity:.45}
+.meter{flex:1;height:8px;background:#3A2A30;border-radius:4px;overflow:hidden}
+.meter i{display:block;height:100%;width:0;background:var(--teal)}
+/* แท็บ */
+.tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:4px;border-radius:14px;background:var(--panel);border:1px solid var(--line)}
+.tabs button{min-height:44px;border:none;border-radius:10px;background:transparent;font-family:'Mitr',sans-serif;font-size:14px}
+.tabs button[aria-selected=true]{background:var(--neon);color:#1A0E12}
+.pane{display:none;flex-direction:column;gap:10px}
+.pane.show{display:flex}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:13px;color:var(--mute)}
+.in{min-height:48px;padding:0 14px;border-radius:12px;background:var(--panel);border:2px solid var(--line);font-size:16px}
+.in:focus{border-color:var(--teal)}
+textarea.in{padding:12px 14px;min-height:160px;resize:vertical}
+.btn{min-height:48px;padding:0 18px;border-radius:24px;border:none;background:var(--neon);color:#1A0E12;font-family:'Mitr',sans-serif;font-weight:600;font-size:15px}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);font-weight:400}
+.btn.sm{min-height:44px;padding:0 14px;font-size:14px}
+.inline{display:flex;gap:8px}
+.inline .in{flex:1}
+.check{display:flex;align-items:center;gap:8px;font-size:14px;min-height:40px}
+.check input{width:20px;height:20px;accent-color:var(--neon)}
+.list{display:flex;flex-direction:column;gap:8px}
+.item{display:flex;gap:10px;align-items:center;padding:8px;border-radius:12px;background:#1E1016;border:1px solid #3A2A30}
+.item.cur{border-color:var(--neon)}
+.item img,.thumb{width:96px;height:54px;flex:none;border-radius:8px;object-fit:cover;background:#2E1C24;display:flex;align-items:center;justify-content:center;font-family:'Mitr';color:var(--mute);font-size:13px}
+.item .meta{flex:1;display:flex;flex-direction:column;gap:2px}
+.item .tt{font-size:14px;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.drop{min-height:130px;border-radius:16px;border:2px dashed var(--teal);background:#0F1F1D;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;cursor:pointer;padding:12px}
+.drop input{position:absolute;width:1px;height:1px;opacity:0}
+.note{font-size:13px;color:var(--mute);background:#1E1016;border:1px solid #3A2A30;border-radius:12px;padding:10px 12px;line-height:1.5}
+.empty{text-align:center;color:var(--mute);font-size:14px;padding:18px 0}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#1A0E12;padding:10px 16px;border-radius:12px;font-size:14px;max-width:90vw;display:none;z-index:9}
+a{color:var(--neon)}
+</style>
+</head>
+<body>
+<main class="wrap">
+
+<section class="cab" aria-label="ตู้เพลง">
+<div class="neon">
+<div><div class="logo">JUKEBOX</div><div class="sub">คาราโอเกะ</div></div>
+<div class="screen">
+<div id="yt"></div>
+<div class="vinyl" id="vinyl"><div class="disc"><i></i></div></div>
+<div class="idle" id="idle">เลือกเพลงจาก YouTube หรืออัปโหลดไฟล์เพลง<br>แล้วกด ▶ เพื่อเริ่ม</div>
+</div>
+<div class="now">
+<div class="muted" id="nowLabel">ยังไม่มีเพลง</div>
+<div class="t" id="nowTitle">—</div>
+<div><span class="chip" id="nowChip" hidden></span> <span class="muted" id="nowTime"></span></div>
+<div class="bar" id="seek" hidden><i id="prog"></i></div>
+</div>
+</div>
+</section>
+
+<div class="lyr" id="lyr" aria-live="polite">
+<div class="p" id="lp"></div><div class="c" id="lc"></div><div class="n" id="ln"></div>
+<div class="nav"><button class="btn ghost sm" id="lPrev">‹ ท่อนก่อน</button><button class="btn sm" id="lNext">ท่อนถัดไป ›</button></div>
+</div>
+
+<div class="ctrl">
+<button class="round" id="bPrev" aria-label="เพลงก่อนหน้า"><svg viewBox="0 0 24 24"><path d="M19 5L9 12l10 7V5z"/><path d="M5 5v14"/></svg></button>
+<button class="round" id="bPlay" aria-label="เล่น/หยุด"><svg viewBox="0 0 24 24" id="playIco"><path d="M7 5l12 7-12 7V5z"/></svg></button>
+<button class="round" id="bNext" aria-label="เพลงถัดไป"><svg viewBox="0 0 24 24"><path d="M5 5l10 7-10 7V5z"/><path d="M19 5v14"/></svg></button>
+<button class="sing" id="bMic"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg><span id="micTxt">เปิดไมค์</span></button>
+</div>
+
+<section class="mix" aria-label="มิกเซอร์">
+<div class="row"><label for="vMusic">ดนตรี</label><input type="range" id="vMusic" min="0" max="100" value="80"><output id="oMusic">80</output></div>
+<div class="row" id="rowGuide"><label for="vGuide">เสียงไกด์</label><input type="range" id="vGuide" min="0" max="100" value="0"><output id="oGuide">0</output></div>
+<div class="row"><label for="vMic">ไมค์</label><input type="range" id="vMic" min="0" max="100" value="70"><output id="oMic">70</output></div>
+<div class="row"><label for="vEcho">เอคโค่</label><input type="range" id="vEcho" min="0" max="100" value="30"><output id="oEcho">30</output></div>
+<div class="row"><label>ระดับไมค์</label><div class="meter"><i id="meter"></i></div></div>
+<div class="muted" id="mixNote">ใส่หูฟังตอนร้อง จะได้ไม่มีเสียงหอนและดีเลย์น้อยลง</div>
+</section>
+
+<nav class="tabs" role="tablist">
+<button role="tab" aria-selected="true" data-tab="yt">YouTube</button>
+<button role="tab" aria-selected="false" data-tab="file">ไฟล์ฉัน</button>
+<button role="tab" aria-selected="false" data-tab="queue" id="tabQ">คิว (0)</button>
+<button role="tab" aria-selected="false" data-tab="lyrics">เนื้อเพลง</button>
+</nav>
+
+<section class="pane show" id="p-yt">
+<div class="field"><label for="ytLink">วางลิงก์ YouTube (ไม่ต้องใช้ API key)</label>
+<div class="inline"><input class="in" id="ytLink" placeholder="https://youtu.be/..."><button class="btn sm" id="ytAdd">ใส่คิว</button></div></div>
+<form class="field" id="ytForm"><label for="q">หรือค้นหาเพลง</label>
+<div class="inline"><input class="in" id="q" type="search" placeholder="ชื่อเพลง / ศิลปิน"><button class="btn sm" type="submit">ค้นหา</button></div></form>
+<label class="check"><input type="checkbox" id="kOnly" checked> เติมคำว่า "karaoke" ให้อัตโนมัติ</label>
+<div class="list" id="results"></div>
+<details class="note"><summary>ตั้งค่า YouTube API key (สำหรับการค้นหา)</summary>
+<div class="field" style="margin-top:8px"><label for="key">API key</label><input class="in" id="key" type="password" autocomplete="off" placeholder="AIza..."></div>
+<p style="margin:8px 0 0">สร้างได้ฟรีที่ Google Cloud Console → เปิดใช้ YouTube Data API v3 → สร้าง API key แล้วจำกัดให้ใช้ได้เฉพาะโดเมนเว็บของคุณ key จะเก็บไว้ในเบราว์เซอร์เครื่องนี้เท่านั้น</p>
+</details>
+</section>
+
+<section class="pane" id="p-file">
+<label class="drop" id="drop">
+<svg class="ico" style="width:34px;height:34px;stroke:var(--teal)" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+<span class="h">เลือกไฟล์เพลง (หลายไฟล์ได้)</span><span class="muted">MP3, WAV, M4A · ต้องเป็นไฟล์สเตอริโอ</span>
+<input type="file" id="files" accept="audio/*" multiple>
+</label>
+<label class="check"><input type="checkbox" id="rights"> ฉันเป็นเจ้าของหรือมีสิทธิ์ใช้ไฟล์เพลงเหล่านี้</label>
+<label class="check"><input type="checkbox" id="cut" checked> ตัดเสียงร้องออก</label>
+<div class="note">ต้นแบบนี้ตัดเสียงร้องในเครื่องด้วยการหักล้างเสียงกลางวง (เสียงร้องส่วนใหญ่อยู่ตรงกลาง) ใช้ได้ดีกับเพลงที่มิกซ์แบบปกติ อาจมีเสียงร้องหลงเหลือหรือเสียงก้องติดมาบ้าง เวอร์ชันจริงจะใช้ AI (Demucs) บนเซิร์ฟเวอร์ให้เสียงสะอาดกว่านี้</div>
+</section>
+
+<section class="pane" id="p-queue"><div class="list" id="qList"></div></section>
+
+<section class="pane" id="p-lyrics">
+<div class="field"><label for="lyrText">เนื้อเพลงของเพลงที่กำลังเล่น (บรรทัดละท่อน)</label>
+<textarea class="in" id="lyrText" placeholder="วางเนื้อเพลงที่นี่ แล้วกด 'ท่อนถัดไป' ตอนร้อง"></textarea></div>
+<label class="check"><input type="checkbox" id="lyrShow" checked> แสดงเนื้อเพลงใต้จอ</label>
+</section>
+
+</main>
+<div id="toast" role="status"></div>
+
+<script>
+{
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const decode = s => { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; };
+const fmt = s => { s = Math.max(0, s|0); return (s/60|0) + ':' + String(s%60).padStart(2,'0'); };
+const store = { get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }, set(k,v){ try { localStorage.setItem(k,v); } catch(e){} } };
+let toastT;
+const toast = m => { const t = $('toast'); t.textContent = m; t.style.display = 'block'; clearTimeout(toastT); toastT = setTimeout(() => t.style.display = 'none', 3200); };
+
+const queue = [];
+let cur = -1, playing = false;
+let uid = 0;
+
+/* ---------- Audio engine ---------- */
+let ctx, master, micStream, micSrc, micGain, echoDelay, echoFb, echoWet, analyser;
+let fileNodes = null, fileOffset = 0, fileStartAt = 0;
+function audio() {
+  if (!ctx) {
+    ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
+    master = ctx.createGain(); master.connect(ctx.destination);
+  }
+  if (ctx.state === 'suspended') ctx.resume();
+  return ctx;
+}
+const val = id => $(id).value / 100;
+
+function applyMix() {
+  const it = queue[cur];
+  if (fileNodes) {
+    const t = ctx.currentTime, cut = $('cut').checked && fileNodes.stereo;
+    fileNodes.inst.gain.setTargetAtTime(cut ? val('vMusic') : 0, t, .03);
+    fileNodes.guide.gain.setTargetAtTime(cut ? val('vGuide') * val('vMusic') : val('vMusic'), t, .03);
+  }
+  if (it && it.type === 'yt' && ytReady) player.setVolume(Math.round(val('vMusic') * 100));
+  if (micGain) {
+    const t = ctx.currentTime;
+    micGain.gain.setTargetAtTime(val('vMic') * 1.5, t, .03);
+    echoWet.gain.setTargetAtTime(val('vEcho') * .8, t, .03);
+    echoFb.gain.setTargetAtTime(val('vEcho') * .55, t, .03);
+  }
+  const guideOn = it && it.type === 'file' && $('cut').checked;
+  $('rowGuide').classList.toggle('off', !guideOn);
+  $('vGuide').disabled = !guideOn;
+}
+
+function stopFile() {
+  if (fileNodes) { try { fileNodes.src.onended = null; fileNodes.src.stop(); } catch(e){} fileNodes.all.forEach(n => n.disconnect()); fileNodes = null; }
+}
+function startFile(buf, offset) {
+  audio(); stopFile();
+  const src = ctx.createBufferSource(); src.buffer = buf;
+  const stereo = buf.numberOfChannels >= 2;
+  const inst = ctx.createGain(), guide = ctx.createGain(), all = [src, inst, guide];
+  if (stereo) {
+    // หักล้างเสียงกลาง: (L − R) + เบสจาก lowpass
+    const split = ctx.createChannelSplitter(2), side = ctx.createGain(), inv = ctx.createGain(), lp = ctx.createBiquadFilter();
+    side.channelCount = 1; side.channelCountMode = 'explicit';
+    inv.gain.value = -1; lp.type = 'lowpass'; lp.frequency.value = 150;
+    src.connect(split); split.connect(side, 0); split.connect(inv, 1); inv.connect(side);
+    src.connect(lp); lp.connect(inst); side.connect(inst);
+    all.push(split, side, inv, lp);
+  }
+  src.connect(guide); inst.connect(master); guide.connect(master);
+  fileNodes = { src, inst, guide, all, stereo, buf };
+  fileOffset = offset; fileStartAt = ctx.currentTime;
+  src.onended = () => { if (fileNodes && fileNodes.src === src) next(); };
+  src.start(0, offset);
+  applyMix();
+}
+const filePos = () => fileNodes ? Math.min(fileNodes.buf.duration, fileOffset + ctx.currentTime - fileStartAt) : fileOffset;
+
+/* ---------- Mic ---------- */
+async function toggleMic() {
+  audio();
+  if (micStream) {
+    micStream.getTracks().forEach(t => t.stop()); [micSrc, micGain, echoDelay, echoFb, echoWet, analyser].forEach(n => n.disconnect());
+    micStream = null; micGain = null; $('bMic').classList.remove('on'); $('micTxt').textContent = 'เปิดไมค์'; $('meter').style.width = '0'; return;
+  }
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+  } catch (e) { toast('เปิดไมค์ไม่ได้ — อนุญาตการใช้ไมโครโฟนในเบราว์เซอร์ และเปิดผ่าน https'); return; }
+  micSrc = ctx.createMediaStreamSource(micStream);
+  micGain = ctx.createGain(); echoDelay = ctx.createDelay(1); echoFb = ctx.createGain(); echoWet = ctx.createGain(); analyser = ctx.createAnalyser();
+  echoDelay.delayTime.value = .26; analyser.fftSize = 512;
+  micSrc.connect(micGain); micGain.connect(master); micGain.connect(analyser);
+  micGain.connect(echoDelay); echoDelay.connect(echoFb); echoFb.connect(echoDelay); echoDelay.connect(echoWet); echoWet.connect(master);
+  $('bMic').classList.add('on'); $('micTxt').textContent = 'ปิดไมค์';
+  applyMix();
+}
+const meterBuf = new Uint8Array(512);
+function meterLoop() {
+  if (analyser && micStream) {
+    analyser.getByteTimeDomainData(meterBuf);
+    let m = 0; for (const v of meterBuf) m = Math.max(m, Math.abs(v - 128));
+    $('meter').style.width = Math.min(100, m / 1.0) + '%';
+  }
+  const it = queue[cur];
+  if (it) {
+    let pos = 0, dur = 0;
+    if (it.type === 'file') { pos = filePos(); dur = it.buf.duration; }
+    else if (ytReady && player.getDuration) { pos = player.getCurrentTime() || 0; dur = player.getDuration() || 0; }
+    if (dur) { $('prog').style.width = (pos / dur * 100) + '%'; $('nowTime').textContent = fmt(pos) + ' / ' + fmt(dur); }
+  }
+  requestAnimationFrame(meterLoop);
+}
+
+/* ---------- YouTube ---------- */
+let player, ytReady = false, pendingYt = null;
+window.onYouTubeIframeAPIReady = () => {
+  player = new YT.Player('yt', {
+    playerVars: Object.assign({ playsinline: 1, rel: 0, modestbranding: 1 }, /^https?:$/.test(location.protocol) ? { origin: location.origin } : {}),
+    events: {
+      onReady: () => { ytReady = true; applyMix(); if (pendingYt) { const p = pendingYt; pendingYt = null; playYt(p); } },
+      onStateChange: e => {
+        const it = queue[cur]; if (!it || it.type !== 'yt') return;
+        if (e.data === YT.PlayerState.ENDED) next();
+        if (e.data === YT.PlayerState.PLAYING) { setPlaying(true); const d = player.getVideoData(); if (d && d.title && it.title !== d.title) { it.title = d.title; renderNow(); renderQueue(); } }
+        if (e.data === YT.PlayerState.PAUSED) setPlaying(false);
+      },
+      onError: e => {
+        const msg = { 2: 'ลิงก์/รหัสวิดีโอไม่ถูกต้อง', 5: 'เบราว์เซอร์นี้เล่นวิดีโอไม่ได้', 100: 'ไม่พบวิดีโอ (ถูกลบหรือเป็นส่วนตัว)', 101: 'เจ้าของคลิปไม่อนุญาตให้เล่นในแอปอื่น', 150: 'เจ้าของคลิปไม่อนุญาตให้เล่นในแอปอื่น', 153: 'YouTube ปฏิเสธเพราะไม่รู้ว่าเปิดจากเว็บไหน — ต้องเปิดแอปผ่านเว็บ https' }[e.data] || 'เล่นคลิปนี้ไม่ได้';
+        showErr(msg + ' (รหัส ' + e.data + ')');
+        if (queue.length > cur + 1) setTimeout(next, 2500);
+      }
+    }
+  });
+};
+function showErr(m) { toast(m); const d = $('idle'); d.innerHTML = '⚠️ ' + esc(m); d.style.display = 'flex'; }
+(() => {
+  if (!/^https?:$/.test(location.protocol)) { showErr('ตอนนี้เปิดเป็นไฟล์ในเครื่อง YouTube จะไม่ยอมเล่น — อัปโหลดไฟล์ขึ้นเว็บ (เช่น tiiny.host หรือ Netlify Drop) แล้วเปิดลิงก์ https แทน'); }
+  const s = document.createElement('script'); s.src = 'https://www.youtube.com/iframe_api';
+  s.onerror = () => showErr('โหลดตัวเล่น YouTube ไม่ได้ — ตรวจอินเทอร์เน็ต หรือปิดตัวบล็อกโฆษณา');
+  document.head.appendChild(s);
+  setTimeout(() => { if (!ytReady) showErr('ตัวเล่น YouTube ยังโหลดไม่ขึ้น — ลองรีเฟรช หรือเปิดใน Chrome/Safari โดยตรง (ไม่ใช่ในแอปแชต)'); }, 10000);
+})();
+function playYt(it) {
+  if (!ytReady) { pendingYt = it; toast('กำลังโหลดตัวเล่น YouTube…'); return; }
+  player.loadVideoById(it.id); applyMix();
+}
+const ytId = s => { s = s.trim(); const m = s.match(/(?:v=|youtu\.be\/|shorts\/|embed\/|live\/)([\w-]{11})/); return m ? m[1] : (/^[\w-]{11}$/.test(s) ? s : null); };
+
+async function search(q) {
+  const key = $('key').value.trim();
+  if (!key) { $('results').innerHTML = '<div class="empty">ใส่ YouTube API key ในการตั้งค่าด้านล่างก่อน หรือวางลิงก์ YouTube ด้านบนแทน</div>'; document.querySelector('#p-yt details').open = true; return; }
+  store.set('jk_key', key);
+  const query = $('kOnly').checked && !/karaoke|คาราโอเกะ/i.test(q) ? q + ' karaoke' : q;
+  $('results').innerHTML = '<div class="empty">กำลังค้นหา…</div>';
+  try {
+    const url = 'https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoEmbeddable=true&maxResults=12&q=' + encodeURIComponent(query) + '&key=' + encodeURIComponent(key);
+    const r = await fetch(url); const j = await r.json();
+    if (j.error) throw new Error(j.error.message);
+    lastResults = (j.items || []).map(v => ({ type: 'yt', id: v.id.videoId, title: decode(v.snippet.title), channel: decode(v.snippet.channelTitle), thumb: (v.snippet.thumbnails.medium || v.snippet.thumbnails.default || {}).url }));
+    $('results').innerHTML = lastResults.length ? lastResults.map((v, i) => `
+      <div class="item"><img src="${esc(v.thumb || '')}" alt="" loading="lazy">
+      <div class="meta"><div class="tt">${esc(v.title)}</div><div class="muted">${esc(v.channel)}</div>
+      ${/karaoke|คาราโอเกะ|instrumental/i.test(v.title) ? '<span class="chip">คาราโอเกะ</span>' : '<span class="chip warn">อาจมีเสียงร้อง</span>'}</div>
+      <button class="round" data-add="${i}" aria-label="ใส่คิว"><svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></svg></button></div>`).join('') : '<div class="empty">ไม่พบผลลัพธ์</div>';
+  } catch (e) { $('results').innerHTML = '<div class="empty">ค้นหาไม่สำเร็จ: ' + esc(e.message) + '</div>'; }
+}
+let lastResults = [];
+
+/* ---------- Queue & playback ---------- */
+function add(it, playNow) {
+  it.uid = ++uid; it.lyrics = it.lyrics || '';
+  queue.push(it); renderQueue();
+  if (cur === -1 || playNow) play(queue.length - 1); else toast('ใส่คิวแล้ว: ' + it.title);
+}
+let lyrIdx = 0;
+function play(i) {
+  if (i < 0 || i >= queue.length) return;
+  stopFile(); if (ytReady) player.stopVideo();
+  cur = i; lyrIdx = 0; const it = queue[i];
+  if (it.type === 'yt') playYt(it); else { startFile(it.buf, 0); setPlaying(true); }
+  renderNow(); renderQueue(); renderLyrics();
+}
+function next() { if (cur + 1 < queue.length) play(cur + 1); else { stopFile(); fileOffset = 0; setPlaying(false); toast('หมดคิวแล้ว เลือกเพลงต่อได้เลย'); } }
+function prev() { if (cur > 0) play(cur - 1); }
+function togglePlay() {
+  audio(); const it = queue[cur];
+  if (!it) { if (queue.length) play(0); else toast('ยังไม่มีเพลงในคิว'); return; }
+  if (it.type === 'yt') { if (!ytReady) return; player.getPlayerState() === YT.PlayerState.PLAYING ? player.pauseVideo() : player.playVideo(); }
+  else if (fileNodes) { fileOffset = filePos(); stopFile(); setPlaying(false); }
+  else { startFile(it.buf, fileOffset >= it.buf.duration ? 0 : fileOffset); setPlaying(true); }
+}
+function setPlaying(p) {
+  playing = p;
+  $('playIco').innerHTML = p ? '<path d="M8 5v14"/><path d="M16 5v14"/>' : '<path d="M7 5l12 7-12 7V5z"/>';
+  $('vinyl').classList.toggle('spin', p);
+}
+function renderNow() {
+  const it = queue[cur];
+  $('idle').style.display = it ? 'none' : 'flex';
+  $('vinyl').style.display = it && it.type === 'file' ? 'flex' : 'none';
+  $('seek').hidden = !it;
+  if (!it) return;
+  $('nowLabel').textContent = 'กำลังเล่น · เพลงที่ ' + (cur + 1) + ' จาก ' + queue.length;
+  $('nowTitle').textContent = it.title;
+  const chip = $('nowChip'); chip.hidden = false;
+  if (it.type === 'yt') { chip.className = 'chip warn'; chip.textContent = 'YouTube'; }
+  else if (!it.buf || it.buf.numberOfChannels < 2) { chip.className = 'chip warn'; chip.textContent = 'ไฟล์โมโน · ตัดเสียงไม่ได้'; }
+  else { chip.className = 'chip'; chip.textContent = $('cut').checked ? 'ตัดเสียงร้องแล้ว' : 'เสียงต้นฉบับ'; }
+  applyMix();
+}
+function renderQueue() {
+  $('tabQ').textContent = 'คิว (' + queue.length + ')';
+  $('qList').innerHTML = queue.length ? queue.map((it, i) => `
+    <div class="item${i === cur ? ' cur' : ''}">
+    ${it.thumb ? `<img src="${esc(it.thumb)}" alt="">` : `<span class="thumb">${it.type === 'yt' ? 'YT' : 'ไฟล์'}</span>`}
+    <div class="meta"><div class="tt">${esc(it.title)}</div><div class="muted">${i === cur ? 'กำลังเล่น' : 'คิวที่ ' + (i + 1)}</div></div>
+    <button class="round" data-play="${i}" aria-label="เล่นเพลงนี้"><svg viewBox="0 0 24 24"><path d="M7 5l12 7-12 7V5z"/></svg></button>
+    <button class="round" data-del="${i}" aria-label="ลบออกจากคิว"><svg viewBox="0 0 24 24"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg></button></div>`).join('') : '<div class="empty">ยังไม่มีเพลงในคิว</div>';
+}
+function removeAt(i) {
+  queue.splice(i, 1);
+  if (i === cur) { stopFile(); if (ytReady) player.stopVideo(); cur = -1; setPlaying(false); if (queue.length) play(Math.min(i, queue.length - 1)); else renderNow(); }
+  else if (i < cur) cur--;
+  renderQueue(); renderNow();
+}
+
+/* ---------- Lyrics ---------- */
+function lines() { const it = queue[cur]; return it ? it.lyrics.split('\n').map(s => s.trim()).filter(Boolean) : []; }
+function renderLyrics() {
+  const it = queue[cur], L = lines();
+  if (document.activeElement !== $('lyrText')) $('lyrText').value = it ? it.lyrics : '';
+  $('lyr').style.display = L.length && $('lyrShow').checked ? 'flex' : 'none';
+  lyrIdx = Math.max(0, Math.min(lyrIdx, L.length - 1));
+  $('lp').textContent = L[lyrIdx - 1] || ''; $('lc').textContent = L[lyrIdx] || ''; $('ln').textContent = L[lyrIdx + 1] || '';
+}
+
+/* ---------- Files ---------- */
+async function addFiles(list) {
+  if (!$('rights').checked) { toast('ติ๊กยืนยันว่ามีสิทธิ์ใช้ไฟล์ก่อนนะคะ'); return; }
+  audio();
+  for (const f of list) {
+    try {
+      const buf = await ctx.decodeAudioData(await f.arrayBuffer());
+      add({ type: 'file', title: f.name.replace(/\.[^.]+$/, ''), buf });
+      if (buf.numberOfChannels < 2) toast(f.name + ' เป็นไฟล์โมโน ตัดเสียงร้องไม่ได้');
+    } catch (e) { toast('เปิดไฟล์ ' + f.name + ' ไม่ได้'); }
+  }
+}
+
+/* ---------- Events ---------- */
+$('bPlay').onclick = togglePlay; $('bNext').onclick = () => { audio(); next(); }; $('bPrev').onclick = () => { audio(); prev(); };
+$('bMic').onclick = toggleMic;
+['Music', 'Guide', 'Mic', 'Echo'].forEach(n => $('v' + n).addEventListener('input', () => { $('o' + n).textContent = $('v' + n).value; applyMix(); }));
+$('cut').onchange = () => { renderNow(); };
+$('seek').onclick = e => {
+  const it = queue[cur]; if (!it) return;
+  const r = $('seek').getBoundingClientRect(), f = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+  if (it.type === 'yt') { if (ytReady) player.seekTo(f * player.getDuration(), true); }
+  else { fileOffset = f * it.buf.duration; if (fileNodes) startFile(it.buf, fileOffset); }
+};
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-selected', x === b));
+  document.querySelectorAll('.pane').forEach(p => p.classList.toggle('show', p.id === 'p-' + b.dataset.tab));
+});
+$('ytAdd').onclick = () => {
+  const id = ytId($('ytLink').value);
+  if (!id) { toast('ลิงก์ YouTube ไม่ถูกต้อง'); return; }
+  audio(); add({ type: 'yt', id, title: 'วิดีโอ YouTube', thumb: 'https://i.ytimg.com/vi/' + id + '/mqdefault.jpg' }); $('ytLink').value = '';
+};
+$('ytForm').onsubmit = e => { e.preventDefault(); const q = $('q').value.trim(); if (q) search(q); };
+$('results').onclick = e => { const b = e.target.closest('[data-add]'); if (b) { audio(); add({ ...lastResults[b.dataset.add] }); } };
+$('qList').onclick = e => {
+  const p = e.target.closest('[data-play]'), d = e.target.closest('[data-del]');
+  if (p) { audio(); play(+p.dataset.play); } if (d) removeAt(+d.dataset.del);
+};
+$('files').onchange = e => { addFiles([...e.target.files]); e.target.value = ''; };
+$('drop').ondragover = e => e.preventDefault();
+$('drop').ondrop = e => { e.preventDefault(); addFiles([...e.dataTransfer.files].filter(f => f.type.startsWith('audio'))); };
+$('lyrText').oninput = () => { const it = queue[cur]; if (it) { it.lyrics = $('lyrText').value; renderLyrics(); } else toast('เลือกเพลงก่อน แล้วค่อยใส่เนื้อเพลง'); };
+$('lyrShow').onchange = renderLyrics;
+$('lNext').onclick = () => { lyrIdx++; renderLyrics(); };
+$('lPrev').onclick = () => { lyrIdx--; renderLyrics(); };
+
+$('key').value = store.get('jk_key') || '';
+renderQueue(); renderNow(); requestAnimationFrame(meterLoop);
+}
+</script>
+</body>
+</html>
