@@ -45,10 +45,12 @@ button{cursor:pointer}
 .sing.on{background:var(--pink);box-shadow:0 0 16px var(--pink)}
 .sing svg{width:20px;height:20px;fill:none;stroke:#1A0E12;stroke-width:2;stroke-linecap:round}
 /* เนื้อเพลง */
-.lyr{text-align:center;display:none;flex-direction:column;gap:6px;padding:6px 0}
-.lyr .p,.lyr .n{color:var(--mute);font-size:15px;min-height:22px}
-.lyr .c{font-family:'Mitr',sans-serif;font-size:22px;color:var(--neon);text-shadow:0 0 10px var(--neon);min-height:32px}
-.lyr .nav{display:flex;justify-content:center;gap:10px}
+.lyr{text-align:center;display:none;flex-direction:column;gap:8px;padding:14px 10px;border-radius:16px;background:var(--deep);border:2px solid #3A2A30}
+.lyr .p,.lyr .n,.lyr .n2{color:var(--mute);font-size:15px;min-height:22px}
+.lyr .n2{opacity:.6}
+.lyr .c{font-family:'Mitr',sans-serif;font-size:clamp(20px,6.2vw,27px);line-height:1.35;min-height:36px;background:linear-gradient(90deg,var(--neon) var(--p,0%),var(--ink) var(--p,0%));-webkit-background-clip:text;background-clip:text;color:transparent}
+.lyr .nav,.lyr .tools{display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap}
+.tap{min-height:64px;font-size:18px}
 /* มิกเซอร์ */
 .mix{background:var(--panel);border:2px solid #6E6660;border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
 .row{display:flex;align-items:center;gap:10px;min-height:40px}
@@ -111,8 +113,11 @@ a{color:var(--neon)}
 </section>
 
 <div class="lyr" id="lyr" aria-live="polite">
-<div class="p" id="lp"></div><div class="c" id="lc"></div><div class="n" id="ln"></div>
-<div class="nav"><button class="btn ghost sm" id="lPrev">‹ ท่อนก่อน</button><button class="btn sm" id="lNext">ท่อนถัดไป ›</button></div>
+<div class="muted" id="lMode"></div>
+<div class="p" id="lp"></div><div class="c" id="lc"></div><div class="n" id="ln"></div><div class="n2" id="ln2"></div>
+<div class="nav" id="lNav"><button class="btn ghost sm" id="lPrev">‹ ท่อนก่อน</button><button class="btn sm" id="lNext">ท่อนถัดไป ›</button></div>
+<div class="tools" id="lTools"><button class="btn ghost sm" id="offMinus" aria-label="ให้เนื้อเพลงขึ้นเร็วขึ้น">เร็วขึ้น</button><span class="muted" id="offLbl">ตรงจังหวะ</span><button class="btn ghost sm" id="offPlus" aria-label="ให้เนื้อเพลงขึ้นช้าลง">ช้าลง</button></div>
+<button class="btn tap" id="tapBtn" hidden>แตะตอนเริ่มร้องท่อนนี้</button>
 </div>
 
 <div class="ctrl">
@@ -165,9 +170,19 @@ a{color:var(--neon)}
 <section class="pane" id="p-queue"><div class="list" id="qList"></div></section>
 
 <section class="pane" id="p-lyrics">
-<div class="field"><label for="lyrText">เนื้อเพลงของเพลงที่กำลังเล่น (บรรทัดละท่อน)</label>
-<textarea class="in" id="lyrText" placeholder="วางเนื้อเพลงที่นี่ แล้วกด 'ท่อนถัดไป' ตอนร้อง"></textarea></div>
+<form class="field" id="lrcForm"><label for="lrcQ">ค้นหาเนื้อเพลงอัตโนมัติ (LRCLIB)</label>
+<div class="inline"><input class="in" id="lrcQ" type="search" placeholder="ชื่อเพลง ศิลปิน"><button class="btn sm" type="submit">ค้นหา</button></div></form>
+<div class="list" id="lrcRes"></div>
+<div class="field"><label for="lyrText">เนื้อเพลงของเพลงที่กำลังเล่น (บรรทัดละท่อน หรือไฟล์ LRC ที่มีเวลา)</label>
+<textarea class="in" id="lyrText" placeholder="วางเนื้อเพลงที่นี่"></textarea></div>
+<div class="inline" style="flex-wrap:wrap">
+<button class="btn sm" id="lyrSave">ใช้เนื้อเพลงนี้</button>
+<button class="btn ghost sm" id="tapStart">จับจังหวะเอง</button>
+<label class="btn ghost sm" style="display:inline-flex;align-items:center;cursor:pointer">นำเข้า .lrc<input type="file" id="lrcFile" accept=".lrc,.txt,text/plain" style="position:absolute;width:1px;height:1px;opacity:0"></label>
+<button class="btn ghost sm" id="lrcCopy">คัดลอก LRC</button>
+</div>
 <label class="check"><input type="checkbox" id="lyrShow" checked> แสดงเนื้อเพลงใต้จอ</label>
+<div class="note"><b>จับจังหวะเอง:</b> วางเนื้อเพลงแล้วกดปุ่มนี้ เพลงจะเริ่มเล่นใหม่ตั้งแต่ต้น ให้แตะปุ่มใหญ่ทุกครั้งที่เริ่มร้องท่อนใหม่ แอปจะจำจังหวะไว้ รอบหน้าเนื้อเพลงจะวิ่งเอง<br><br>เนื้อเพลงจาก LRCLIB เป็นข้อมูลที่ผู้ใช้ทั่วไปช่วยกันใส่ ไม่ได้มีลิขสิทธิ์ เหมาะใช้ส่วนตัว ไม่ควรเปิดให้ลูกค้าในร้านใช้</div>
 </section>
 
 </main>
@@ -276,6 +291,7 @@ function meterLoop() {
     if (it.type === 'file') { pos = filePos(); dur = it.buf.duration; }
     else if (ytReady && player.getDuration) { pos = player.getCurrentTime() || 0; dur = player.getDuration() || 0; }
     if (dur) { $('prog').style.width = (pos / dur * 100) + '%'; $('nowTime').textContent = fmt(pos) + ' / ' + fmt(dur); }
+    lyrTick();
   }
   requestAnimationFrame(meterLoop);
 }
@@ -290,7 +306,11 @@ window.onYouTubeIframeAPIReady = () => {
       onStateChange: e => {
         const it = queue[cur]; if (!it || it.type !== 'yt') return;
         if (e.data === YT.PlayerState.ENDED) next();
-        if (e.data === YT.PlayerState.PLAYING) { setPlaying(true); const d = player.getVideoData(); if (d && d.title && it.title !== d.title) { it.title = d.title; renderNow(); renderQueue(); } }
+        if (e.data === YT.PlayerState.PLAYING) {
+          setPlaying(true); const d = player.getVideoData();
+          if (d && d.title && it.title !== d.title) { it.title = d.title; renderNow(); renderQueue(); }
+          autoLyrics(it);
+        }
         if (e.data === YT.PlayerState.PAUSED) setPlaying(false);
       },
       onError: e => {
@@ -337,7 +357,7 @@ let lastResults = [];
 
 /* ---------- Queue & playback ---------- */
 function add(it, playNow) {
-  it.uid = ++uid; it.lyrics = it.lyrics || '';
+  it.uid = ++uid; loadSaved(it);
   queue.push(it); renderQueue();
   if (cur === -1 || playNow) play(queue.length - 1); else toast('ใส่คิวแล้ว: ' + it.title);
 }
@@ -345,9 +365,11 @@ let lyrIdx = 0;
 function play(i) {
   if (i < 0 || i >= queue.length) return;
   stopFile(); if (ytReady) player.stopVideo();
-  cur = i; lyrIdx = 0; const it = queue[i];
+  cur = i; lyrIdx = 0; tapIdx = -1; const it = queue[i];
   if (it.type === 'yt') playYt(it); else { startFile(it.buf, 0); setPlaying(true); }
   renderNow(); renderQueue(); renderLyrics();
+  $('lrcRes').innerHTML = ''; $('lrcQ').value = cleanTitle(it.title) === 'วิดีโอ YouTube' ? '' : cleanTitle(it.title);
+  if (it.type === 'file') autoLyrics(it);
 }
 function next() { if (cur + 1 < queue.length) play(cur + 1); else { stopFile(); fileOffset = 0; setPlaying(false); toast('หมดคิวแล้ว เลือกเพลงต่อได้เลย'); } }
 function prev() { if (cur > 0) play(cur - 1); }
@@ -394,13 +416,109 @@ function removeAt(i) {
 }
 
 /* ---------- Lyrics ---------- */
-function lines() { const it = queue[cur]; return it ? it.lyrics.split('\n').map(s => s.trim()).filter(Boolean) : []; }
+const lyrKey = it => 'jk_lyr_' + (it.type === 'yt' ? it.id : 'f_' + it.title);
+const ts = t => { t = Math.max(0, t); const m = t / 60 | 0, s = (t - m * 60).toFixed(2).padStart(5, '0'); return '[' + String(m).padStart(2, '0') + ':' + s + ']'; };
+function parseLyrics(text) {
+  const out = []; let synced = false;
+  for (const raw of String(text).split(/\r?\n/)) {
+    const tags = [...raw.matchAll(/\[(\d+):(\d+(?:\.\d+)?)\]/g)];
+    const s = raw.replace(/\[[^\]]*\]/g, '').replace(/<[\d:.]+>/g, '').trim();
+    if (tags.length) { synced = true; tags.forEach(m => out.push({ t: +m[1] * 60 + +m[2], s })); }
+    else if (!/^\[[a-z]+:/i.test(raw.trim()) && s) out.push({ t: null, s });
+  }
+  if (synced) { const L = out.filter(l => l.t !== null).sort((a, b) => a.t - b.t); return { lines: L, synced: L.length > 0 }; }
+  return { lines: out, synced: false };
+}
+const toLRC = lyr => lyr.lines.map(l => (l.t !== null ? ts(l.t) : '') + l.s).join('\n');
+function setLyrics(it, text, save) {
+  it.lyr = parseLyrics(text); it.lyrText = text;
+  if (save) store.set(lyrKey(it), JSON.stringify({ text, offset: it.offset || 0 }));
+  if (it === queue[cur]) { lyrIdx = 0; renderLyrics(); }
+}
+function loadSaved(it) {
+  try { const d = JSON.parse(store.get(lyrKey(it)) || 'null'); if (d) { it.offset = d.offset || 0; setLyrics(it, d.text, false); } } catch (e) {}
+}
+let tapIdx = -1, shownIdx = -2;
+const getPos = () => { const it = queue[cur]; if (!it) return 0; return it.type === 'file' ? filePos() : (ytReady && player.getCurrentTime ? player.getCurrentTime() || 0 : 0); };
 function renderLyrics() {
-  const it = queue[cur], L = lines();
-  if (document.activeElement !== $('lyrText')) $('lyrText').value = it ? it.lyrics : '';
-  $('lyr').style.display = L.length && $('lyrShow').checked ? 'flex' : 'none';
-  lyrIdx = Math.max(0, Math.min(lyrIdx, L.length - 1));
-  $('lp').textContent = L[lyrIdx - 1] || ''; $('lc').textContent = L[lyrIdx] || ''; $('ln').textContent = L[lyrIdx + 1] || '';
+  const it = queue[cur], ly = it && it.lyr, has = ly && ly.lines.length;
+  if (document.activeElement !== $('lyrText')) $('lyrText').value = it && it.lyrText ? (ly && ly.synced ? toLRC(ly) : it.lyrText) : '';
+  $('lyr').style.display = has && $('lyrShow').checked ? 'flex' : 'none';
+  const tapping = tapIdx >= 0;
+  $('tapBtn').hidden = !tapping;
+  $('lNav').style.display = has && !ly.synced && !tapping ? 'flex' : 'none';
+  $('lTools').style.display = has && ly.synced && !tapping ? 'flex' : 'none';
+  $('lMode').textContent = tapping ? 'โหมดจับจังหวะ · ท่อนที่ ' + (tapIdx + 1) + '/' + ly.lines.length : '';
+  if (it) { const o = it.offset || 0; $('offLbl').textContent = o === 0 ? 'ตรงจังหวะ' : (o > 0 ? 'ช้าลง ' : 'เร็วขึ้น ') + Math.abs(o).toFixed(1) + ' วิ'; }
+  shownIdx = -2;
+  if (has && (!ly.synced || tapping)) {
+    const i = tapping ? tapIdx : (lyrIdx = Math.max(0, Math.min(lyrIdx, ly.lines.length - 1)));
+    showLines(ly.lines, i); $('lc').style.setProperty('--p', tapping ? '0%' : '100%');
+  }
+}
+function showLines(L, i) {
+  $('lp').textContent = (L[i - 1] || {}).s || '';
+  $('lc').textContent = i < 0 ? '♪ ♪ ♪' : ((L[i] || {}).s || '');
+  $('ln').textContent = (L[i + 1] || {}).s || ''; $('ln2').textContent = (L[i + 2] || {}).s || '';
+}
+function lyrTick() {
+  const it = queue[cur], ly = it && it.lyr;
+  if (!ly || !ly.synced || tapIdx >= 0 || !ly.lines.length || $('lyr').style.display === 'none') return;
+  const L = ly.lines, t = getPos() - (it.offset || 0);
+  let i = -1; while (i + 1 < L.length && L[i + 1].t <= t) i++;
+  if (i !== shownIdx) { shownIdx = i; showLines(L, i); }
+  let p = 0;
+  if (i >= 0) { const end = i + 1 < L.length ? L[i + 1].t : L[i].t + 4; p = Math.min(1, (t - L[i].t) / Math.max(.3, (end - L[i].t) * .85)); }
+  $('lc').style.setProperty('--p', (p * 100).toFixed(1) + '%');
+}
+function startTap() {
+  const it = queue[cur];
+  if (!it) { toast('เลือกเพลงก่อนนะคะ'); return; }
+  const text = $('lyrText').value.trim(); if (!text) { toast('วางเนื้อเพลงก่อนนะคะ'); return; }
+  const plain = parseLyrics(text).lines.map(l => l.s).join('\n');
+  it.lyr = parseLyrics(plain); it.lyrText = plain; it.lyr.lines.forEach(l => l.t = null);
+  tapIdx = 0; $('lyrShow').checked = true;
+  audio();
+  if (it.type === 'yt') { if (ytReady) { player.seekTo(0, true); player.playVideo(); } } else { startFile(it.buf, 0); setPlaying(true); }
+  renderLyrics(); $('lyr').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function tap() {
+  const it = queue[cur]; if (!it || tapIdx < 0) return;
+  const L = it.lyr.lines; L[tapIdx].t = Math.max(0, getPos() - .15); tapIdx++;
+  if (tapIdx >= L.length) {
+    tapIdx = -1; it.lyr.synced = true; it.offset = 0; setLyrics(it, toLRC(it.lyr), true); toast('บันทึกจังหวะแล้ว รอบหน้าเนื้อเพลงจะวิ่งเอง');
+  } else renderLyrics();
+}
+function nudge(d) { const it = queue[cur]; if (!it || !it.lyr) return; it.offset = Math.round(((it.offset || 0) + d) * 10) / 10; store.set(lyrKey(it), JSON.stringify({ text: it.lyrText, offset: it.offset })); renderLyrics(); }
+
+/* LRCLIB */
+const cleanTitle = s => String(s).split('|')[0]
+  .replace(/[\(\[【].*?[\)\]】]/g, ' ')
+  .replace(/karaoke|คาราโอเกะ|official|music video|lyrics?( video)?|เนื้อเพลง|instrumental|ไม่มีเสียงร้อง|ดนตรี|cover|\bmv\b|\bhd\b|\b4k\b|คีย์\S*|key\s*\S+/gi, ' ')
+  .replace(/\s+/g, ' ').trim();
+let lrcResults = [];
+async function lrcSearch(q, auto) {
+  const it = queue[cur];
+  if (!auto) $('lrcRes').innerHTML = '<div class="empty">กำลังค้นหา…</div>';
+  try {
+    const r = await fetch('https://lrclib.net/api/search?q=' + encodeURIComponent(q));
+    const j = await r.json(); lrcResults = (Array.isArray(j) ? j : []).filter(x => x.syncedLyrics || x.plainLyrics).slice(0, 8);
+    const dur = it ? (it.type === 'file' ? it.buf.duration : (ytReady ? player.getDuration() : 0)) : 0;
+    $('lrcRes').innerHTML = lrcResults.length ? lrcResults.map((x, i) => `
+      <div class="item"><div class="meta"><div class="tt">${esc(x.trackName)}</div><div class="muted">${esc(x.artistName || '')} · ${fmt(x.duration || 0)}</div>
+      <div>${x.syncedLyrics ? '<span class="chip">มีจังหวะ</span>' : '<span class="chip warn">ไม่มีจังหวะ</span>'} ${dur && Math.abs((x.duration || 0) - dur) <= 4 ? '<span class="chip">ความยาวตรงกับเพลง</span>' : ''}</div></div>
+      <button class="btn sm" data-lrc="${i}">ใช้</button></div>`).join('') : '<div class="empty">ไม่พบเนื้อเพลง ลองแก้คำค้น หรือวางเนื้อเพลงเองแล้วจับจังหวะ</div>';
+    if (auto && it && !it.lyr) {
+      const best = lrcResults.find(x => x.syncedLyrics && dur && Math.abs(x.duration - dur) <= 4) || (lrcResults.length === 1 && lrcResults[0].syncedLyrics ? lrcResults[0] : null);
+      if (best) { setLyrics(it, best.syncedLyrics, true); toast('เจอเนื้อเพลงแล้ว: ' + best.trackName); }
+      else if (lrcResults.length) toast('เจอเนื้อเพลงที่อาจตรง ' + lrcResults.length + ' รายการ — เลือกได้ในแท็บเนื้อเพลง');
+    }
+  } catch (e) { if (!auto) $('lrcRes').innerHTML = '<div class="empty">ค้นหาไม่สำเร็จ ลองใหม่อีกครั้ง</div>'; }
+}
+function autoLyrics(it) {
+  if (!it || it.lyr || it.autoTried || it !== queue[cur]) return;
+  const q = cleanTitle(it.title); if (!q || q === 'วิดีโอ YouTube') return;
+  it.autoTried = true; $('lrcQ').value = q; lrcSearch(q, true);
 }
 
 /* ---------- Files ---------- */
@@ -445,7 +563,33 @@ $('qList').onclick = e => {
 $('files').onchange = e => { addFiles([...e.target.files]); e.target.value = ''; };
 $('drop').ondragover = e => e.preventDefault();
 $('drop').ondrop = e => { e.preventDefault(); addFiles([...e.dataTransfer.files].filter(f => f.type.startsWith('audio'))); };
-$('lyrText').oninput = () => { const it = queue[cur]; if (it) { it.lyrics = $('lyrText').value; renderLyrics(); } else toast('เลือกเพลงก่อน แล้วค่อยใส่เนื้อเพลง'); };
+$('lyrSave').onclick = () => {
+  const it = queue[cur]; if (!it) { toast('เลือกเพลงก่อน แล้วค่อยใส่เนื้อเพลง'); return; }
+  const text = $('lyrText').value.trim(); if (!text) { toast('ยังไม่มีเนื้อเพลง'); return; }
+  setLyrics(it, text, true); $('lyrShow').checked = true; renderLyrics();
+  toast(it.lyr.synced ? 'ใช้เนื้อเพลงแล้ว วิ่งตามจังหวะอัตโนมัติ' : 'ใช้เนื้อเพลงแล้ว กด "จับจังหวะเอง" ถ้าอยากให้วิ่งเอง');
+};
+$('tapStart').onclick = startTap;
+$('tapBtn').onclick = tap;
+$('offMinus').onclick = () => nudge(-0.5);
+$('offPlus').onclick = () => nudge(0.5);
+$('lrcForm').onsubmit = e => { e.preventDefault(); const q = $('lrcQ').value.trim(); if (q) lrcSearch(q, false); };
+$('lrcRes').onclick = e => {
+  const b = e.target.closest('[data-lrc]'), it = queue[cur]; if (!b) return;
+  if (!it) { toast('เลือกเพลงก่อนนะคะ'); return; }
+  const x = lrcResults[b.dataset.lrc]; it.offset = 0;
+  setLyrics(it, x.syncedLyrics || x.plainLyrics, true); $('lyrShow').checked = true; renderLyrics();
+  toast(x.syncedLyrics ? 'ใช้เนื้อเพลงแล้ว ถ้าไม่ตรงจังหวะ กด "เร็วขึ้น/ช้าลง" ใต้เนื้อเพลง' : 'เนื้อเพลงนี้ไม่มีจังหวะ กด "จับจังหวะเอง" ได้');
+};
+$('lrcFile').onchange = async e => {
+  const f = e.target.files[0], it = queue[cur]; e.target.value = '';
+  if (!f) return; if (!it) { toast('เลือกเพลงก่อนนะคะ'); return; }
+  setLyrics(it, await f.text(), true); $('lyrShow').checked = true; renderLyrics(); toast('นำเข้าเนื้อเพลงแล้ว');
+};
+$('lrcCopy').onclick = async () => {
+  const it = queue[cur]; if (!it || !it.lyr || !it.lyr.synced) { toast('ยังไม่มีเนื้อเพลงที่มีจังหวะ'); return; }
+  try { await navigator.clipboard.writeText(toLRC(it.lyr)); toast('คัดลอกแล้ว'); } catch (e) { toast('คัดลอกไม่ได้ในเบราว์เซอร์นี้'); }
+};
 $('lyrShow').onchange = renderLyrics;
 $('lNext').onclick = () => { lyrIdx++; renderLyrics(); };
 $('lPrev').onclick = () => { lyrIdx--; renderLyrics(); };
